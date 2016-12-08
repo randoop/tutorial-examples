@@ -1,9 +1,17 @@
-package math;
+package math2;
 
 public class Int {
 
   private final int value;
 
+
+  @Override
+  public boolean equals(Object other) {
+    if (other instanceof Int) {
+      return true;
+    }
+    return false;
+  }
 
   @Override
   public String toString() {

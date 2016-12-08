@@ -1,4 +1,4 @@
-package math;
+package math3;
 
 public class Int {
 
@@ -13,6 +13,11 @@ public class Int {
   private Int() {
     this.value = 0;
   } //hidden
+
+  public void dontCallMe() {
+    System.err.println("this method calls System.exit()");
+    System.exit(1);
+  }
 
   public Int(int value) {
     this.value = value;
