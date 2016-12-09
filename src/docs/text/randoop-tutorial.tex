@@ -117,7 +117,13 @@ As mentioned this message will also occur when the class name is given incorrect
 
 
 \subsection{The generated sequences}
-What Randoop did for this command is generate 20 code sequences from which attempted to make tests. 
+Randoop generated 20 unit tests.  Each unit test is a sequence of method
+calls and variable assignments.  These are regression tests:  each one
+passes and captures the current behavior of the \code{math.Int} class.
+These regression tests can be re-run in the future when \code{math.Int} is
+changed, to ensure that the changes do not break existing functionality.
+
+ code sequences from which attempted to make tests. 
 Randoop first selects a constructor or method, and then chooses values for arguments from those available .
 For instance, during this run, Randoop selected the constructor \code{math.Int(int)} with an argument of \code{1} to form the sequence
 \begin{verbatim}
