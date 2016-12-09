@@ -80,10 +80,20 @@ task cleanRandoopErrorTests(type: Delete) {
   }
 }
 
+task cleanRandoopRegressionTests(type: Delete) {
+  delete fileTree("src/test/java") {
+    include '**/RegressionTest*.java'
+  }
+}
+
 task first (dependsOn: ['switchToBuggy', 'cleanRandoopTests' ]) {
   description 'Setup for first tutorial task'
 }
 
 task second (dependsOn: ['switchToZero' ]) {
   description 'Setup for second tutorial task'
+}
+
+task third (dependsOn: ['switchToOne']) {
+  description 'Setup for third tutorial task'
 }

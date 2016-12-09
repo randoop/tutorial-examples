@@ -18,7 +18,7 @@ public class MyInteger {
     return Integer.toString(value);
   }
 
-  public MyInteger() {
+  private MyInteger() {
     this.value = 0;
   }
 
