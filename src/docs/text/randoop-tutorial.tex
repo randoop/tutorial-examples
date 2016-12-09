@@ -78,8 +78,8 @@ help -- Displays a help message for a given command.
 \section{Generating Tests}
 To generate tests, run the following command 
 \begin{verbatim}
- java -ea -cp tutorial-examples.jar:randoop-all-3.0.8.jar randoop.main.Main gentests \
- --testclass=math.Int --junit-output-dir=out/int --inputlimit=20
+ java -ea -cp tutorial-examples.jar:randoop-all-3.0.8.jar randoop.main.Main \
+ gentests --testclass=math.Int --junit-output-dir=out/int --inputlimit=20
 \end{verbatim}
 This will generate a small number of tests using the constructors and methods of the \texttt{math.Int} class; writing them to the subdirectory \texttt{out/int}.
 
@@ -103,8 +103,8 @@ with the semicolon instead of the colon between path elements.
 
 If you run the above command without the \texttt{tutorial-examples.jar} file using the command
 \begin{verbatim}
-java -ea -cp randoop-all-3.0.8.jar randoop.main.Main gentests --testclass=math.Int \
- --junit-output-dir=out/int --inputlimit=20
+java -ea -cp randoop-all-3.0.8.jar randoop.main.Main gentests \
+ --testclass=math.Int --junit-output-dir=out/int --inputlimit=20
 \end{verbatim}
 Then you will get an error message like this one
 \begin{verbatim}
@@ -135,7 +135,7 @@ Since this sequence runs without an error, the value it creates could be used to
    int int2 = int1.getIntValue();
 \end{verbatim}
 With each new selection of a constructor or method, the generated sequences grow longer because Randoop will use the values created by sequences generated earlier. 
-For instance, \code{RegressionTest0.test6()} has the sequence
+For instance, in the class \code{RegressionTest0}, the method \cmd{test6()} has the sequence
 \begin{verbatim}
   math.Int int1 = new math.Int(1);
   math.Int int3 = new math.Int(1);
@@ -146,7 +146,7 @@ For instance, \code{RegressionTest0.test6()} has the sequence
   math.Int int9 = int1.add(int6);
   java.lang.String str10 = int1.toString();
 \end{verbatim}
-which is build for a selection of \code{math.Int.toString()} with an argument chosen from a longer sequence (built for a call to \code{math.Int.add(Int)}).
+which is build after the selection of \code{math.Int.toString()} applied to a \code{math.Int} object chosen from a longer sequence (built for a call to \code{math.Int.add(Int)}).
 (Note that the generated sequence doesn't necessarily use the most recently created value in the input sequence.)
 
 When a sequence is generated, it is executed using Java reflection, and with the results evaluated to determine if the sequence has an error or not. 
@@ -174,11 +174,12 @@ We can direct the generation of assertions somewhat by providing methods that sh
 These should be side-effect free methods that return attributes of the object that can be tested in assertions.
 
 In the class \code{math.Int}, the method \code{math.Int.getIntValue()} is a suitable observer.
-To use it in test generation the method needs to be given in a file, so run the command
+To use it in test generation the method needs to be given in a file.
+Create the needed file with the command
 \begin{verbatim}
   echo "math.Int.getIntValue()" > intobservers.txt
 \end{verbatim}
-Now when Randoop is run, we specify this file
+Now when Randoop is run, we specify the file \texttt{intobservers.txt}
 \begin{verbatim}
 java -ea -cp tutorial-examples.jar:randoop-all-3.0.8.jar randoop.main.Main gentests \
  --testclass=math.Int --junit-output-dir=out/int --inputlimit=20 \
@@ -201,7 +202,7 @@ which shows the result of the add operation of two distinct values.
 
 \subsection{Setting Limits}
 Randoop provides different ways to limit how many tests will be generated.
-The approach we recommend is the one we have seen so far, which is to set \cmd{--inputlimit}.
+The approach we recommend is the one we have been using, which is to set \cmd{--inputlimit}.
 This determines the maximum number of sequences that Randoop will consider as a test.
 In the example class that we have been using, this works well, but sometimes the definition of the class means that a generation limit cannot be reached.
 
@@ -210,8 +211,8 @@ But, the default value is relatively large, so we should set a time limit for ho
 Choosing a time limit that is too small can result in Randoop being non-deterministic between runs, but it turns out a minute is often enough for most circumstances.
 So we can change our command to 
 \begin{verbatim}
-java -ea -cp tutorial-examples.jar:randoop-all-3.0.8.jar randoop.main.Main gentests \
- --testclass=math.Int --junit-output-dir=out/int --inputlimit=200 \
+java -ea -cp tutorial-examples.jar:randoop-all-3.0.8.jar randoop.main.Main \
+  gentests --testclass=math.Int --junit-output-dir=out/int --inputlimit=200 \
  --observers=intobservers.txt --timelimit=60
 \end{verbatim}
 choosing \cmd{--inputlimit} to be a larger value to increase the diversity of the tests.
@@ -221,8 +222,8 @@ choosing \cmd{--inputlimit} to be a larger value to increase the diversity of th
 As we mentioned in the introduction, Randoop is able to discover test sequences that exhibit apparent errors. 
 To see an example of this, run Randoop using this command
 \begin{verbatim}
-java -ea -cp tutorial-examples.jar:randoop-all-3.0.8.jar randoop.main.Main gentests \
- --testclass=math2.Int --junit-output-dir=out/int2 --inputlimit=20  \
+java -ea -cp tutorial-examples.jar:randoop-all-3.0.8.jar randoop.main.Main \
+  gentests --testclass=math2.Int --junit-output-dir=out/int2 --inputlimit=20 \
  --observers=intobservers.txt --timelimit=60
 \end{verbatim}
 which uses a version of the \code{Int} class that has a buggy \code{equals} method (the previous version had none), and does not override \code{Object.hashCode()}.
@@ -247,7 +248,7 @@ In addition to this contract, Randoop checks a number of other contracts, each b
 Note that error-revealing tests are intended to document failures, and should always fail when run. If, for some reason, these tests are not useful, they can be disabled by setting the flag \cmd{--no-error-revealing-tests}. 
 
 
-\section{The Difficult}
+\section{Handling Complications}
 
 There are methods for which randomly generated tests are problematic.
 Randoop has ways to deal with most of these.
@@ -257,8 +258,8 @@ One way to deal with a method that we don't want to have included in a test is t
 The class \code{math3.Int} has a method \code{dontCallMe()} that calls \code{System.exit()}.
 Run this command 
 \begin{verbatim}
-java -ea -cp tutorial-examples.jar:randoop-all-3.0.8.jar randoop.main.Main gentests  \
---testclass=math3.Int --junit-output-dir=out/int3 --inputlimit=20  \
+java -ea -cp tutorial-examples.jar:randoop-all-3.0.8.jar randoop.main.Main \ 
+ gentests --testclass=math3.Int --junit-output-dir=out/int3 --inputlimit=20  \
 --observers=intobservers.txt --timelimit=60
 \end{verbatim}
 Don't worry if you don't find the output directory -- it is not there!
@@ -266,8 +267,8 @@ Randoop used reflection to execute the method that then called \code{System.exit
 
 The following command uses the \cmd{--omitmethods} command-line argument to indicate that the method should be skipped when selecting methods during test generation.
 \begin{verbatim}
-java -ea -cp tutorial-examples.jar:randoop-all-3.0.8.jar randoop.main.Main gentests  \
- --testclass=math3.Int --junit-output-dir=out/int3 --inputlimit=20 \
+java -ea -cp tutorial-examples.jar:randoop-all-3.0.8.jar randoop.main.Main \
+  gentests --testclass=math3.Int --junit-output-dir=out/int3 --inputlimit=20 \
  --observers=intobservers.txt --timelimit=60 --omitmethods="dontCallMe\(\)"
 \end{verbatim}
 Run Randoop with this command should terminate as before.
@@ -277,10 +278,34 @@ The argument  \cmd{--omitmethods} takes a regular expression of all of the metho
 Omitting methods works when we know we don't want particular methods of the classes under test to be called, but not so well when we we know what methods we want to avoid, but not which classes under test they are called from.
 In this situation, we can mock these undesirable methods so that they aren't actually called.
 
-To do this, you need another jar file 
+Before we see how to do this, download the \texttt{mapcall-3.0.8.jar} file from the latest release of Randoop located at \url{https://github.com/randoop/randoop/releases/latest}.
+This file contains a Java agent that will replace calls to certain methods to methods that will replace their behavior.
+In our example, we replace calls to \code{System.exit(status)} by another method that just prints a message that the call was ignored.
 
+This is done by providing a class with the replacement method, and a file detailing how methods are to be replaced.
+For the example, we need a class with a method that has the same signature as \code{System.exit(status)}.
+The following class is included in the \texttt{tutorial-examples.jar} file.
+\vfill\pagebreak
+\begin{verbatim}
+package mapcalls;
 
-
+public class ExitMappedCall {
+  public static void exit(int status) {  }
+}
+\end{verbatim}
+Now we need to create a file that specifies the mapping like this
+\begin{verbatim}
+math3.*
+  java.lang.System.exit (int) mapcalls.ExitMappedCall
+\end{verbatim}
+which, for any class in the \code{math3} package, will replace a call to \code{System.exit()} as indicated by the file. Now to run Randoop using the mocked calls, the command-line needs to include the MapCall Javaagent:
+\begin{verbatim}
+java -javaagent:mapcall-3.0.8.jar=--map_calls=mapcalls.txt \
+  -ea -cp tutorial-examples.jar:randoop-all-3.0.8.jar randoop.main.Main \
+  gentests --testclass=math3.Int --junit-output-dir=out/int4 --inputlimit=20 \
+ --observers=intobservers.txt --timelimit=60
+\end{verbatim}
+The only complication with using this approach is that the generated tests have to be run with the MapCall agent.
 
 
 \subsection{Skipping Flaky Tests}
@@ -289,5 +314,10 @@ These are tests that can change behavior between runs, having difficult to find 
 With Randoop, it is possible to observe flaky behaviors of sequences between runs inside Randoop, between the run in Randoop and at the command line, and between runs on the command line.
 At the moment, Randoop is only able to handle the first case, though by default Randoop will simply print an error message and halt.
 However, when given the option \cmd{--ignore-flaky-tests}, Randoop will treat a flaky test as invalid and discard it.
+
+\section{A Larger Example}
+The tutorial, so far, has used simplistic inputs that don't really demonstrate the advantages of Randoop. 
+So, let's look at applying Randoop to a larger set of inputs.
+The Pascali project \url{url-here} has scripts that ...
 
 \end{document}  

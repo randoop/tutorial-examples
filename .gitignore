@@ -6,6 +6,10 @@ ui/
 *.orig
 *~
 TAGS
+*src/docs/text/*.aux
+*src/docs/text/*.log
+*src/docs/text/*.pdf
+*src/docs/text/*synctex.gz
 
 # IDE-specific ignores
 # lists comes from import, and running project build
