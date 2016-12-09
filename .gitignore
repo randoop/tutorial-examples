@@ -6,30 +6,13 @@ ui/
 *.orig
 *~
 TAGS
-*src/docs/text/*.aux
-*src/docs/text/*.log
-*src/docs/text/*.pdf
-*src/docs/text/*synctex.gz
+src/docs/text/*.aux
+src/docs/text/*.log
+src/docs/text/*.pdf
+src/docs/text/*synctex.gz
 
-# IDE-specific ignores
-# lists comes from import, and running project build
+catalanoimage/
+randoop.jar
 
-# IntelliJ IDEA
-.idea/
-out/
-*.iml
-*.ipr
-*.iws
-
-# Eclipse
-.settings/
-.classpath
-.project
-bin/
-
-# NetBeans
-/.nb-gradle/
-
-src/docs/text/randoop-tutorial.aux
-src/docs/text/randoop-tutorial.log
-src/docs/text/randoop-tutorial.pdf
+src/test/java/ErrorTest*.java
+src/test/java/RegressionTest*.java
