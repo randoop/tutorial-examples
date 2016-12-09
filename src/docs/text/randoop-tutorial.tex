@@ -23,300 +23,118 @@
 %\subsection{}
 
 \section{Introduction}
-Randoop is a random test generator for classes written in Java.
-When Randoop is given a collection of classes, it will generate tests that either identify suspected failures in error-revealing tests, or capture behavior as regression tests.
-This tutorial introduces how Randoop works, and how to work with Randoop to control what happens during generation.
+Randoop is a random test generator for classes written in Java; 
+creating tests by exploring both known behavioral contracts as well as complex combinations of constructors and methods across classes.
+The resulting tests are either error-revealing tests that identify suspected failures, or regression tests that capture current behavior.
+These are tests that are too complicated, or even too mundane, for the average programmer to write, yet add coverage to a test suite at the cost of the runtime for Randoop (and, perhaps, some parameter tuning).
+
+This tutorial is an introduction to using Randoop to generate tests, specifically in the context of the Pascali project.
 
 \section{Getting Started}
-The tutorial involves generating files, and so we recommend that you create a directory where you are going to work:
-\begin{verbatim}
-  mkdir randoop-tutorial
-\end{verbatim}
-We'll do everything in that directory, and the tutorial assumes all of the files are there.
+This tutorial assumes that the Pascali \cmd{fetch.py} and \cmd{run.py} scripts have been run.
+The first will ensure that the Randoop jar file is available, and the second will ensure that the files needed to run Randoop on files in the Pascali corpus are there.
 
-In order to follow along, you will need the Randoop jar file, and the input classes for which tests will be generated.
-So, to get started, you'll need to download the following files:
-\begin{itemize}
-\item the Randoop jar file \texttt{randoop-all-3.0.8.jar} from the latest release of Randoop located at \url{https://github.com/randoop/randoop/releases/latest}.
-\item the sample jar file \texttt{tutorial-examples.jar} from the latest release of the Randoop tutorial located at \url{https://github.com/randoop/tutorial-examples/releases/latest}.
-\end{itemize}
-Place these files in your working directory
+Assuming you are in the root directory of the Pascali project, the following commands will setup the directory so that the tutorial steps will work:
 \begin{verbatim}
-  mv [download-directory]/randoop-all-*.jar randoop-tutorial/
-  mv [download-directory]/tutorial-examples.jar randoop-tutorial/
+PASCALIROOT = `pwd`
+git clone https://github.com/randoop/tutorial-examples.git
+cd tutorial-examples
+./gradlew -PpascaliRoot=$PASCALIROOT tutorialInit 
 \end{verbatim}
-where \texttt{[download-directory]} is the directory to which the jar files were downloaded.
-And, then change into the directory you created
+Concretely, this creates links to the Randoop jar file, as well as the files needed to run on one of the Pascali input cases.
+
+\section{Learning about Randoop}\label{thebasics}
+We start with a toy class so that we can explore the value of using Randoop.
+
+\subsection{A buggy class}
+First, run the command
 \begin{verbatim}
-  cd randoop-tutorial
+./gradlew first build
 \end{verbatim}
 
-To make sure that everything is setup correctly, run the command
+Before moving on, peek in the file \texttt{src/main/java/math/MyInteger.java}.
+This is a simple class that creates integer-like objects that can be added and multiplied.
+Programmer crafted tests are in \texttt{src/test/java/math/MyIntegerTest.java}.
+With a quick glance these look reasonable, but, as we'll see, this version of \code{MyInteger} has a bug.
+
+When we ran the \cmd{build} Gradle task these files were compiled, and the tests were run.
+But, to be sure, run the tests independently of the build:
 \begin{verbatim}
- java -ea -cp tutorial-examples.jar:randoop-all-3.0.8.jar randoop.main.Main help
+./gradlew cleanTest test
 \end{verbatim}
-This should print the following
+And, indeed, everything passes.
+
+Now let's use Randoop to generate some tests.
+Copy and paste the following command into your terminal to run Randoop:
 \begin{verbatim}
-Randoop for Java version 3.0.8.
-
-Randoop  is a command-line tool that creates unit tests for Java.
-It accepts one of the commands listed below. For the user manual,
-please visit https://randoop.github.io/randoop/manual/index.html
-
-Type `help' followed by a command name to see documentation.
-
-
-Commands:
-
-gentests -- Generates unit tests for a set of classes.
-
-help -- Displays a help message for a given command.
+ java -ea -cp build/classes/main:randoop.jar randoop.main.Main gentests \
+   --testclass=math.MyInteger --junit-output-dir=src/test/java --outputlimit=20
 \end{verbatim}
+This will generate a small number of tests using the constructors and methods of the \texttt{math.MyInteger} class; writing them to the subdirectory \texttt{src/test/java}.
+Randoop has actually generated two pairs of files: one for error-revealing tests, and one for regression tests.
+For each pair, the file with the version number, such as \texttt{ErrorTest0.java}, is the JUnit class, and the file without (e.g., \texttt{ErrorTest.java}) is the JUnit4 test suite consisting of \code{ErrorTest0}.
 
-
-
-\section{Generating Tests}
-To generate tests, run the following command 
-\begin{verbatim}
- java -ea -cp tutorial-examples.jar:randoop-all-3.0.8.jar randoop.main.Main \
- gentests --testclass=math.Int --junit-output-dir=out/int --inputlimit=20
-\end{verbatim}
-This will generate a small number of tests using the constructors and methods of the \texttt{math.Int} class; writing them to the subdirectory \texttt{out/int}.
-
-After running the command, you will see two files in the directory \texttt{out/int}:
- \texttt{RegressionTest.java} and \texttt{RegressionTest0.java}.
-The file \texttt{RegressionTest0.java} contains the generated tests, while  \texttt{RegressionTest.java}  describes the JUnit4 test suite consisting of  \texttt{RegressionTest0}.
-
-\paragraph{A note on classpaths:} 
-Most of the questions that users have about problems with Randoop involve the Java classpath.
-The classpath is a list of directories and jar files that indicate where the compiled class files are located.
-We will always use the same classpath for this tutorial, which is
-\begin{verbatim}
-  tutorial-examples.jar:randoop-all-3.0.8.jar
-\end{verbatim}
-for a Unix/Linux environment.
-For Windows, write the classpath as
-\begin{verbatim}
-  "tutorial-examples.jar;randoop-all-3.0.8.jar"
-\end{verbatim}
-with the semicolon instead of the colon between path elements.
-
-If you run the above command without the \texttt{tutorial-examples.jar} file using the command
-\begin{verbatim}
-java -ea -cp randoop-all-3.0.8.jar randoop.main.Main gentests \
- --testclass=math.Int --junit-output-dir=out/int --inputlimit=20
-\end{verbatim}
-Then you will get an error message like this one
-\begin{verbatim}
-Error: No class with name "math.Int" found on the classpath
-       This is most likely a problem with the classpath. It may be wrong, or
-       it is formatted incorrectly on the command line. The other possibility
-       is that the wrong class name is given.
-\end{verbatim}
-As mentioned this message will also occur when the class name is given incorrectly, but a malformed classpath is often the culprit.
-
-
-\subsection{The generated sequences}
-Randoop generated 20 unit tests.  Each unit test is a sequence of method
-calls and variable assignments.  These are regression tests:  each one
-passes and captures the current behavior of the \code{math.Int} class.
-These regression tests can be re-run in the future when \code{math.Int} is
-changed, to ensure that the changes do not break existing functionality.
-
- code sequences from which attempted to make tests. 
-Randoop first selects a constructor or method, and then chooses values for arguments from those available .
-For instance, during this run, Randoop selected the constructor \code{math.Int(int)} with an argument of \code{1} to form the sequence
-\begin{verbatim}
-   math.Int int1 = new math.Int(1);
-\end{verbatim}
-Since this sequence runs without an error, the value it creates could be used to form a new sequence when \code{math.Int.getIntValue()} is selected:
-\begin{verbatim}
-   math.Int int1 = new math.Int(1);
-   int int2 = int1.getIntValue();
-\end{verbatim}
-With each new selection of a constructor or method, the generated sequences grow longer because Randoop will use the values created by sequences generated earlier. 
-For instance, in the class \code{RegressionTest0}, the method \cmd{test6()} has the sequence
-\begin{verbatim}
-  math.Int int1 = new math.Int(1);
-  math.Int int3 = new math.Int(1);
-  int i4 = int3.getIntValue();
-  math.Int int6 = new math.Int(1);
-  int i7 = int6.getIntValue();
-  math.Int int8 = int3.add(int6);
-  math.Int int9 = int1.add(int6);
-  java.lang.String str10 = int1.toString();
-\end{verbatim}
-which is build after the selection of \code{math.Int.toString()} applied to a \code{math.Int} object chosen from a longer sequence (built for a call to \code{math.Int.add(Int)}).
-(Note that the generated sequence doesn't necessarily use the most recently created value in the input sequence.)
-
-When a sequence is generated, it is executed using Java reflection, and with the results evaluated to determine if the sequence has an error or not. 
-If not, the sequence is considered a regression test, otherwise it is considered an error-revealing test.
-An exception is not necessarily a error, since some are expected; for instance, a \code{NullPointerException} can reasonably be expected when \code{null} is passed as an argument to a method. 
-
-When writing the test classes, Randoop only includes the longest sequence containing that sequence.
-For instance, for the three sequences above, since the first two belong to the longer sequence in \code{test6()}, neither will be written.
-
-The evaluation of the results of the sequences also results in assertions being attached to the sequence. 
-For sequences that become regression tests, these are assertions about values that are observed in the sequence.
-For \code{test6()} these are
-\begin{verbatim}
-  org.junit.Assert.assertTrue(i4 == 1);
-  org.junit.Assert.assertTrue(i7 == 1);
-  org.junit.Assert.assertNotNull(int8);
-  org.junit.Assert.assertNotNull(int9);
-  org.junit.Assert.assertTrue("'" + str10 + "' != '" + "1"+ "'", str10.equals("1"));
-\end{verbatim}
-which check the primitive and \code{String} values, and that returned objects are not \code{null}.
-
-
-\subsection{Refining the assertions}
-We can direct the generation of assertions somewhat by providing methods that should be used as \emph{observers}.
-These should be side-effect free methods that return attributes of the object that can be tested in assertions.
-
-In the class \code{math.Int}, the method \code{math.Int.getIntValue()} is a suitable observer.
-To use it in test generation the method needs to be given in a file.
-Create the needed file with the command
-\begin{verbatim}
-  echo "math.Int.getIntValue()" > intobservers.txt
-\end{verbatim}
-Now when Randoop is run, we specify the file \texttt{intobservers.txt}
-\begin{verbatim}
-java -ea -cp tutorial-examples.jar:randoop-all-3.0.8.jar randoop.main.Main gentests \
- --testclass=math.Int --junit-output-dir=out/int --inputlimit=20 \
- --observers=intobservers.txt
-\end{verbatim}
-This results in tests that show the behavior of the class more directly, as in
-\begin{verbatim}
-public void test10() throws Throwable {
-    math.Int int1 = new math.Int((int)'4');
-    math.Int int3 = new math.Int(100);
-    math.Int int4 = int1.add(int3);
-    org.junit.Assert.assertTrue(int1.getIntValue() == 52);
-    org.junit.Assert.assertTrue(int3.getIntValue() == 100);
-    org.junit.Assert.assertNotNull(int4);
-    org.junit.Assert.assertTrue(int4.getIntValue() == 152);
-  }
-\end{verbatim}
-which shows the result of the add operation of two distinct values.
-
-
-\subsection{Setting Limits}
-Randoop provides different ways to limit how many tests will be generated.
-The approach we recommend is the one we have been using, which is to set \cmd{--inputlimit}.
-This determines the maximum number of sequences that Randoop will consider as a test.
-In the example class that we have been using, this works well, but sometimes the definition of the class means that a generation limit cannot be reached.
-
-In these situations, Randoop uses a time limit, set with \cmd{--timelimit}, to determine when to stop.
-But, the default value is relatively large, so we should set a time limit for how long we are willing to let Randoop run each sequence. 
-Choosing a time limit that is too small can result in Randoop being non-deterministic between runs, but it turns out a minute is often enough for most circumstances.
-So we can change our command to 
-\begin{verbatim}
-java -ea -cp tutorial-examples.jar:randoop-all-3.0.8.jar randoop.main.Main \
-  gentests --testclass=math.Int --junit-output-dir=out/int --inputlimit=200 \
- --observers=intobservers.txt --timelimit=60
-\end{verbatim}
-choosing \cmd{--inputlimit} to be a larger value to increase the diversity of the tests.
-
-
-\subsection{Contract Violations}
-As we mentioned in the introduction, Randoop is able to discover test sequences that exhibit apparent errors. 
-To see an example of this, run Randoop using this command
-\begin{verbatim}
-java -ea -cp tutorial-examples.jar:randoop-all-3.0.8.jar randoop.main.Main \
-  gentests --testclass=math2.Int --junit-output-dir=out/int2 --inputlimit=20 \
- --observers=intobservers.txt --timelimit=60
-\end{verbatim}
-which uses a version of the \code{Int} class that has a buggy \code{equals} method (the previous version had none), and does not override \code{Object.hashCode()}.
-As a result, this run gives three error-revealing tests, all based on the failure of the contract that says that hash codes should be the same for two objects when they are equal (in other words, satisfy \code{equals}).
-One of these tests is
+The fact that Randoop generated the error-revealing tests means that it discovered code sequences that demonstrate the failure of a contract.
+Looking in the file \texttt{src/test/java/ErrorTest0.java}, there are nine methods each which violate the same constract.
+The first, slightly edited, is
 \begin{verbatim}
 public void test1() throws Throwable {
-    math2.Int int1 = new math2.Int((int)(short)-1);
-    math2.Int int3 = new math2.Int((int)(short)-1);
-    java.lang.String str4 = int3.toString();
-    math2.Int int5 = int1.add(int3);
-    boolean b7 = int3.equals((java.lang.Object)0.0f);
+    math.MyInteger myInteger0 = new math.MyInteger();
+    math.MyInteger myInteger1 = new math.MyInteger();
+    math.MyInteger myInteger2 = new math.MyInteger();
+    math.MyInteger myInteger3 = myInteger1.add(myInteger2);
+    math.MyInteger myInteger4 = myInteger0.multiply(myInteger2);
     
-    // Checks the contract:  equals-hashcode on int1 and int5
-    org.junit.Assert.assertTrue("Contract failed: equals-hashcode on int1 and int5", 
-        int1.equals(int5) ? int1.hashCode() == int5.hashCode() : true);
-} 
-\end{verbatim}
-The final assertion documents the fact that the objects \code{int1} and \code{int5} satisfy \code{int1.equals(int5)} but that \code{int1.hashCode() == int5.hashCode()} fails.
-In addition to this contract, Randoop checks a number of other contracts, each based on the JDK documentation.
-
-Note that error-revealing tests are intended to document failures, and should always fail when run. If, for some reason, these tests are not useful, they can be disabled by setting the flag \cmd{--no-error-revealing-tests}. 
-
-
-\section{Handling Complications}
-
-There are methods for which randomly generated tests are problematic.
-Randoop has ways to deal with most of these.
-
-\subsection{Omitting methods}
-One way to deal with a method that we don't want to have included in a test is to omit it.
-The class \code{math3.Int} has a method \code{dontCallMe()} that calls \code{System.exit()}.
-Run this command 
-\begin{verbatim}
-java -ea -cp tutorial-examples.jar:randoop-all-3.0.8.jar randoop.main.Main \ 
- gentests --testclass=math3.Int --junit-output-dir=out/int3 --inputlimit=20  \
---observers=intobservers.txt --timelimit=60
-\end{verbatim}
-Don't worry if you don't find the output directory -- it is not there!
-Randoop used reflection to execute the method that then called \code{System.exit()}, and so Randoop stopped.
-
-The following command uses the \cmd{--omitmethods} command-line argument to indicate that the method should be skipped when selecting methods during test generation.
-\begin{verbatim}
-java -ea -cp tutorial-examples.jar:randoop-all-3.0.8.jar randoop.main.Main \
-  gentests --testclass=math3.Int --junit-output-dir=out/int3 --inputlimit=20 \
- --observers=intobservers.txt --timelimit=60 --omitmethods="dontCallMe\(\)"
-\end{verbatim}
-Run Randoop with this command should terminate as before.
-The argument  \cmd{--omitmethods} takes a regular expression of all of the method and constructor names that should be omitted.
-
-\subsection{Avoiding behaviors}
-Omitting methods works when we know we don't want particular methods of the classes under test to be called, but not so well when we we know what methods we want to avoid, but not which classes under test they are called from.
-In this situation, we can mock these undesirable methods so that they aren't actually called.
-
-Before we see how to do this, download the \texttt{mapcall-3.0.8.jar} file from the latest release of Randoop located at \url{https://github.com/randoop/randoop/releases/latest}.
-This file contains a Java agent that will replace calls to certain methods to methods that will replace their behavior.
-In our example, we replace calls to \code{System.exit(status)} by another method that just prints a message that the call was ignored.
-
-This is done by providing a class with the replacement method, and a file detailing how methods are to be replaced.
-For the example, we need a class with a method that has the same signature as \code{System.exit(status)}.
-The following class is included in the \texttt{tutorial-examples.jar} file.
-\vfill\pagebreak
-\begin{verbatim}
-package mapcalls;
-
-public class ExitMappedCall {
-  public static void exit(int status) {  }
+    // Checks the contract:  equals-hashcode on myInteger3 and myInteger1
+    org.junit.Assert.assertTrue(
+      "Contract failed: equals-hashcode on myInteger3 and myInteger1", 
+      myInteger3.equals(myInteger1) 
+        ? myInteger3.hashCode() == myInteger1.hashCode() : true);
 }
 \end{verbatim}
-Now we need to create a file that specifies the mapping like this
+This test checks the contract that encodes the convention that if two objects are equal, then they have the same \code{hashCode}.
+This is the kind of test that is likely to be overlooked by a programmer, but is critical to the proper behavior of the class in the tests that the programmer wrote.
+
+\vfill\pagebreak
+Running 
 \begin{verbatim}
-math3.*
-  java.lang.System.exit (int) mapcalls.ExitMappedCall
+./gradlew test
 \end{verbatim}
-which, for any class in the \code{math3} package, will replace a call to \code{System.exit()} as indicated by the file. Now to run Randoop using the mocked calls, the command-line needs to include the MapCall Javaagent:
+now includes the Randoop generated tests, with the tests in \texttt{ErrorTest0.java} failing, and the tests in \texttt{RegressionTests0.java} passing.
+
+
+The regression tests capture sequences of code that behaves well, along with assertions about the values that are generated. 
+We'll look more closely at regression tests once we have eliminated the errors.
+
+\subsection{Revised class}
+
+If we look at the class (\texttt{src/main/java/math/MyInteger.java}) more closely than before, we can see that the equals method is poorly defined
 \begin{verbatim}
-java -javaagent:mapcall-3.0.8.jar=--map_calls=mapcalls.txt \
-  -ea -cp tutorial-examples.jar:randoop-all-3.0.8.jar randoop.main.Main \
-  gentests --testclass=math3.Int --junit-output-dir=out/int4 --inputlimit=20 \
- --observers=intobservers.txt --timelimit=60
+public boolean equals(Object other) {
+    if (other instanceof MyInteger) {
+      return true;
+    }
+    return false;
+}
 \end{verbatim}
-The only complication with using this approach is that the generated tests have to be run with the MapCall agent.
+and there is no \code{hashCode()} method.
 
+So, switch to a revised version of the class that fixes these problems.
+Run the command
+\begin{verbatim}
+./gradlew second build
+\end{verbatim}
+to replace the buggy version of the class with the fixed one, and then the command
+\begin{verbatim}
+./gradlew build
+\end{verbatim}
+to compile the class and run the tests. 
+Notice that all of the tests now pass.
 
-\subsection{Skipping Flaky Tests}
-Flaky tests are a general problem in testing.
-These are tests that can change behavior between runs, having difficult to find dependencies on global state in classes or the testing environment. 
-With Randoop, it is possible to observe flaky behaviors of sequences between runs inside Randoop, between the run in Randoop and at the command line, and between runs on the command line.
-At the moment, Randoop is only able to handle the first case, though by default Randoop will simply print an error message and halt.
-However, when given the option \cmd{--ignore-flaky-tests}, Randoop will treat a flaky test as invalid and discard it.
+\subsection{A regression}
 
-\section{A Larger Example}
-The tutorial, so far, has used simplistic inputs that don't really demonstrate the advantages of Randoop. 
+\section{A Larger Example}\label{largerexample}
+The tutorial, so far, has used simplistic inputs that don't completely demonstrate the advantages of Randoop. 
 So, let's look at applying Randoop to a larger set of inputs.
 The Pascali project \url{url-here} includes a collection of libraries over which Randoop and other tools are applied. 
 
