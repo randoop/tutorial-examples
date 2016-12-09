@@ -75,21 +75,21 @@ Randoop has actually generated two pairs of files: one for error-revealing tests
 For each pair, the file with the version number, such as \texttt{ErrorTest0.java}, is the JUnit class, and the file without (e.g., \texttt{ErrorTest.java}) is the JUnit4 test suite consisting of \code{ErrorTest0}.
 
 The fact that Randoop generated the error-revealing tests means that it discovered code sequences that demonstrate the failure of a contract.
-Looking in the file \texttt{src/test/java/ErrorTest0.java}, there are nine methods each which violate the same constract.
-The first, slightly edited, is
+Looking in the file \texttt{src/test/java/ErrorTest0.java}, there are five methods each which violate the same constract.
+The second, slightly edited, is
 \begin{verbatim}
-public void test1() throws Throwable {
-    math.MyInteger myInteger0 = new math.MyInteger();
-    math.MyInteger myInteger1 = new math.MyInteger();
-    math.MyInteger myInteger2 = new math.MyInteger();
-    math.MyInteger myInteger3 = myInteger1.add(myInteger2);
-    math.MyInteger myInteger4 = myInteger0.multiply(myInteger2);
+public void test2() throws Throwable {
+    math.MyInteger myInteger1 = new math.MyInteger((-1));
+    math.MyInteger myInteger3 = new math.MyInteger((-1));
+    java.lang.String str4 = myInteger3.toString();
+    math.MyInteger myInteger5 = myInteger1.multiply(myInteger3);
+    int i6 = myInteger1.getIntValue();
     
-    // Checks the contract:  equals-hashcode on myInteger3 and myInteger1
+    // Checks the contract:  equals-hashcode on myInteger3 and myInteger5
     org.junit.Assert.assertTrue(
-      "Contract failed: equals-hashcode on myInteger3 and myInteger1", 
-      myInteger3.equals(myInteger1) 
-        ? myInteger3.hashCode() == myInteger1.hashCode() : true);
+      "Contract failed: equals-hashcode on myInteger3 and myInteger5",
+      myInteger3.equals(myInteger5) 
+        ? myInteger3.hashCode() == myInteger5.hashCode() : true);
 }
 \end{verbatim}
 This test checks the contract that encodes the convention that if two objects are equal, then they have the same \code{hashCode}.
@@ -122,16 +122,81 @@ and there is no \code{hashCode()} method.
 So, switch to a revised version of the class that fixes these problems.
 Run the command
 \begin{verbatim}
-./gradlew second build
+./gradlew second
 \end{verbatim}
 to replace the buggy version of the class with the fixed one, and then the command
 \begin{verbatim}
 ./gradlew build
 \end{verbatim}
 to compile the class and run the tests. 
-Notice that all of the tests now pass.
+Notice that all of the tests now pass, even the error-revealing tests that had failed before.
 
 \subsection{A regression}
+
+As we just saw, the tests generated for a previous version of the code are useful for checking the behavior of newer versions of the code.
+Let's create new regression tests for the \code{MyInteger} class.
+First, run
+\begin{verbatim}
+./gradlew cleanRandoopRegressionTests
+\end{verbatim}
+to remove the existing set of tests, and then run Randoop again
+\begin{verbatim}
+ java -ea -cp build/classes/main:randoop.jar randoop.main.Main gentests \
+   --testclass=math.MyInteger --junit-output-dir=src/test/java --outputlimit=200
+\end{verbatim}
+Notice that Randoop only generated new regression tests.
+Also, we used a much larger value for \cmd{--outputlimit}, which determines the limit on the number of tests that will generated (the number of generated tests may be much smaller.)
+
+The value of regression tests is that they help identify situations where the behavior has changed from before. 
+Now, switch to a changed version with the command
+\begin{verbatim}
+./gradlew third 
+\end{verbatim}
+and watch closely what happens when the tests are run
+\begin{verbatim}
+./gradlew test 
+\end{verbatim}
+The test runner output shows that there is an \code{AssertionError} at line 54 of \code{RegressionTest0.java}, which is the last assertion in the second test:
+\begin{verbatim}
+public void test02() throws Throwable {
+
+    if (debug) { System.out.format("%n%s%n","RegressionTest0.test02"); }
+
+    math.MyInteger myInteger1 = new math.MyInteger((-1));
+    math.MyInteger myInteger3 = new math.MyInteger((-1));
+    java.lang.String str4 = myInteger3.toString();
+    math.MyInteger myInteger5 = myInteger1.multiply(myInteger3);
+    boolean b7 = myInteger5.equals((java.lang.Object)(short)100);
+    int i8 = myInteger5.getIntValue();
+    
+    // Regression assertion (captures the current behavior of the code)
+    org.junit.Assert.assertTrue("'" + str4 + "' != '" + "-1"+ "'", str4.equals("-1"));
+    
+    // Regression assertion (captures the current behavior of the code)
+    org.junit.Assert.assertNotNull(myInteger5);
+    
+    // Regression assertion (captures the current behavior of the code)
+    org.junit.Assert.assertTrue(b7 == false);
+    
+    // Regression assertion (captures the current behavior of the code)
+    org.junit.Assert.assertTrue(i8 == 1);
+
+}
+\end{verbatim}
+This assertion says that integer value of the product of -1 with itself  should be 1.
+But, since the assertion fails, there is either something wrong with \code{MyInteger.getIntValue()} or with \code{MyInteger.multiply()}.
+If we look in the new \code{MyInteger}, the problem is that we've changed \code{multiply} to avoid the product of arbitrary negative numbers, and messed up the logic of correcting the sign:
+\begin{verbatim}
+public MyInteger multiply(MyInteger other) {
+    int a = Math.abs(this.value);
+    int b = Math.abs(other.value);
+    int product = a * b;
+    if (this.value < 0 || other.value < 0) {
+      return new MyInteger(-1 * product);
+    }
+    return new MyInteger(product);
+  }
+\end{verbatim}
 
 \section{A Larger Example}\label{largerexample}
 The tutorial, so far, has used simplistic inputs that don't completely demonstrate the advantages of Randoop. 

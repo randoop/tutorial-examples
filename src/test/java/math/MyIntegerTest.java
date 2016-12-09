@@ -6,7 +6,7 @@ import static org.junit.Assert.assertEquals;
 public class MyIntegerTest {
   @Test
   public void testZero() {
-    MyInteger zero = new MyInteger();
+    MyInteger zero = new MyInteger(0);
     MyInteger one = new MyInteger(1);
     MyInteger sum = zero.add(one);
     assertEquals("0+1=1", sum, one);

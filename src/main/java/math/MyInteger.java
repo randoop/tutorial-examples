@@ -1,16 +1,24 @@
 package math;
 
-/** buggy version */
+import java.util.Objects;
+
+/** v1 */
 public class MyInteger {
 
   private final int value;
 
   @Override
-  public boolean equals(Object other) {
-    if (other instanceof MyInteger) {
-      return true;
+  public boolean equals(Object obj) {
+    if (obj instanceof MyInteger) {
+      MyInteger other = (MyInteger)obj;
+      return this.value == other.value;
     }
     return false;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(this.value);
   }
 
   @Override
@@ -18,7 +26,7 @@ public class MyInteger {
     return Integer.toString(value);
   }
 
-  public MyInteger() {
+  private MyInteger() {
     this.value = 0;
   }
 
@@ -31,7 +39,13 @@ public class MyInteger {
   }
 
   public MyInteger multiply(MyInteger other) {
-    return new MyInteger(this.value * other.value);
+    int a = Math.abs(this.value);
+    int b = Math.abs(other.value);
+    int product = a * b;
+    if (this.value < 0 || other.value < 0) {
+      return new MyInteger(-1 * product);
+    }
+    return new MyInteger(product);
   }
 
   public int getIntValue() {
