@@ -25,3 +25,7 @@ bin/
 
 # NetBeans
 /.nb-gradle/
+
+src/docs/text/randoop-tutorial.aux
+src/docs/text/randoop-tutorial.log
+src/docs/text/randoop-tutorial.pdf
