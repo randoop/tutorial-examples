@@ -97,3 +97,18 @@ task second (dependsOn: ['switchToZero' ]) {
 task third (dependsOn: ['switchToOne']) {
   description 'Setup for third tutorial task'
 }
+
+task runCatalanoExample (type: JavaExec) {
+  String pathString = file("catalanoimage/classpath.txt").text + ":randoop.jar";
+  classpath = files(pathString.tokenize(':'))
+  enableAssertions = true
+  main = "randoop.main.Main"
+  args = ['gentests', '--classlist=catalanoimage/classlist.txt', '--junit-output-dir=src/test/java', '--junit-package-name=catalano', '--timelimit=60', '--outputlimit=2000']
+}
+
+task cleanCatalanoTests(type: Delete) {
+  delete fileTree("src/test/java/catalano") {
+    include '**/ErrorTest*.java'
+    include '**/RegressionTest*.java'
+  }
+}
