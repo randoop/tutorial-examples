@@ -6,13 +6,13 @@ ui/
 *.orig
 *~
 TAGS
-src/docs/text/*.aux
-src/docs/text/*.log
-src/docs/text/*.pdf
-src/docs/text/*synctex.gz
+**/*.aux
+**/*.log
+**/*.pdf
+**/*synctex.gz
 
 catalanoimage/
 randoop.jar
 
-src/test/java/ErrorTest*.java
-src/test/java/RegressionTest*.java
+**/ErrorTest*.java
+**/RegressionTest*.java
