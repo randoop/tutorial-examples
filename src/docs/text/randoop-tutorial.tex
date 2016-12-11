@@ -14,6 +14,12 @@
 \newcommand{\code}[1]{{\texttt{#1}}}
 \newcommand{\cmd}[1]{{\texttt{#1}}}
 
+%make verbatim treat '`' correctly
+\makeatletter
+\let\@sverbatim\@verbatim
+\def\@verbatim{\@sverbatim \verbatimwithtick}
+{\catcode``=13 \gdef\verbatimwithtick{\chardef`=18 }} 
+\makeatother
 
 \title{Randoop Tutorial}
 %\date{December 7, 2016}              % Activate to display a given date or no date
@@ -39,18 +45,22 @@ Randoop runs automatically.  The user can tune parameters and provide
 This tutorial is an introduction to using Randoop to generate tests, specifically in the context of the Pascali project.
 
 \section{Getting Started}
-This tutorial assumes that the integration\_test2 \cmd{fetch.py} and \cmd{run\_image.py}
-scripts have been run.
+This tutorial assumes that the integration\_test2 \cmd{fetch.py} and \cmd{run\_dyntrace.py}
+scripts have been run:
+\begin{verbatim}
+  python fetch.py
+  python run_dyntrace.py catalano
+\end{verbatim}
 The \cmd{fetch.py} script ensures that the Randoop jar file is available,
-and the \cmd{run.py} script ensures that input files for Randoop (such as
+and the \cmd{run\_dyntrace.py} script ensures that input files for Randoop (such as
 the list of classes in the Pascali corpus) are there.
 
 From the \texttt{integration\_test2} directory, run the
 following commands to make links to files needed for the tutorial:
 \begin{verbatim}
-PASCALIROOT = `pwd`
-git clone https://github.com/randoop/tutorial-examples.git
-cd tutorial-examples
+  PASCALIROOT=`pwd`
+  git clone https://github.com/randoop/tutorial-examples.git
+  cd tutorial-examples
   ./gradlew -PpascaliRoot=$PASCALIROOT tutorialInit 
 \end{verbatim}
 % Concretely, this creates links to the Randoop jar file, as well as the

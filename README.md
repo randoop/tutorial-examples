@@ -1,14 +1,8 @@
 # tutorial-examples
 Randoop tutorial examples and text.
 
-Running
-
-```
-./gradlew build
-```
-
-will create `build/libs/tutorial-examples-X.jar` where `X` is the version number.
-(Version numbers should be the same as the Randoop version number.)
+A clone of this repository is meant to be used in the context of the project
+[aas-integration/integration-test2](https://github.com/aas-integration/integration-test2)
 
 The tutorial text is located in `src/docs/text/`.
 To generate PDF, run `pdflatex randoop-tutorial.tex` in that directory.
