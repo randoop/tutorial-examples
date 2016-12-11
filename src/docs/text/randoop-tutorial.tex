@@ -45,15 +45,18 @@ Randoop runs automatically.  The user can tune parameters and provide
 This tutorial is an introduction to using Randoop to generate tests, specifically in the context of the Pascali project.
 
 \section{Getting Started}
-This tutorial assumes that the integration\_test2 \cmd{fetch.py} and \cmd{run\_dyntrace.py}
+This tutorial assumes that the integration-test2 \cmd{fetch.py} and \cmd{run\_dyntrace.py}
 scripts have been run:
 \begin{verbatim}
+  git clone https://github.com/aas-integration/integration-test2.git
+  cd integration-test2
   python fetch.py
   python run_dyntrace.py catalano
 \end{verbatim}
 The \cmd{fetch.py} script ensures that the Randoop jar file is available,
 and the \cmd{run\_dyntrace.py} script ensures that input files for Randoop (such as
 the list of classes in the Pascali corpus) are there.
+It produces copious output, including Java stack traces --- you can ignore these.
 
 From the \texttt{integration\_test2} directory, run the
 following commands to make links to files needed for the tutorial:
@@ -189,7 +192,9 @@ and run the tests:
 \begin{verbatim}
   ./gradlew test 
 \end{verbatim}
-The test runner output shows that there is an \code{AssertionError} at line 54 of \code{RegressionTest0.java}, which is the last assertion in the second test:
+The test runner output shows that there is an \code{AssertionError} at line
+54 of \code{RegressionTest0.java} (among other places).
+That is the last assertion in the second test:
 \begin{verbatim}
 public void test02() throws Throwable {
 
@@ -219,7 +224,10 @@ public void test02() throws Throwable {
 This assertion says that $-1 \times -1 = 1$.
 Since the assertion fails, either the test is wrong, or there is something
 wrong with one of the methods that the test calls.
-If we look in the new \code{MyInteger}, the problem is that we've changed \code{multiply} to avoid the product of arbitrary negative numbers, and messed up the logic of correcting the sign:
+If we look in the new \code{MyInteger}, the problem is that the developer
+performed an incorrect optimization.  The optimization is to avoid
+multiplication of negative numbers, but the logic is wrong for correcting
+the sign:
 \begin{verbatim}
   public MyInteger multiply(MyInteger other) {
     // Always multiply positive numbers, negate later.
@@ -250,7 +258,9 @@ and redirecting standard error to a log file.
 \begin{verbatim}
   ./gradlew runCatalanoExample 2> catalano-error-log.txt
 \end{verbatim}
-Randoop generates 9 error-revealing tests and 1062 regression tests.
+Randoop runs for about 2 minutes.
+It generates 9 error-revealing tests and about 1062 regression tests, and writes
+them to \texttt{src/test/java/catalano/}.
 \end{document}  
 
 %%  LocalWords:  Pascali test2 py MyInteger src JUnit4 ErrorTest Catalano
