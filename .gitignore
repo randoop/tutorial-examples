@@ -8,7 +8,6 @@ ui/
 TAGS
 **/*.aux
 **/*.log
-**/*.pdf
 **/*synctex.gz
 
 catalanoimage/
