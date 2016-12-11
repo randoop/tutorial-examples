@@ -2,6 +2,7 @@
 \usepackage{geometry}                        % See geometry.pdf to learn the layout options. There are lots.
 \geometry{letterpaper}
 \usepackage{fullpage}
+\usepackage{hyperref}
 \usepackage{url}
 
 \usepackage[parfill]{parskip}        % Activate to begin paragraphs with an empty line rather than an indent
@@ -23,28 +24,28 @@
 %\subsection{}
 
 \section{Introduction}
-Randoop is a random test generator for classes written in Java.
+Randoop is a test generator for Java.
 Given a set of Java classes, Randoop outputs two test suites:
 \begin{itemize}
 \item Error-revealing tests that indicate errors in the Java code.
 \item Regression tests that capture current behavior, and that can identify
   when future code changes affect behavior.
 \end{itemize}
-Randoop creates large numbers of tests that may be too complicated too
+Randoop creates large numbers of tests that may be too complicated or too
 mundane for the average programmer to write.
 Randoop runs automatically.  The user can tune parameters and provide
-optional inputs to improve Randoop's performance.
+\href{https://randoop.github.io/randoop/manual/#command-line-options}{optional inputs} to improve Randoop's performance.
 
 This tutorial is an introduction to using Randoop to generate tests, specifically in the context of the Pascali project.
 
 \section{Getting Started}
-This tutorial assumes that the Pascali \cmd{fetch.py} and \cmd{run.py}
+This tutorial assumes that the integration\_test2 \cmd{fetch.py} and \cmd{run\_image.py}
 scripts have been run.
 The \cmd{fetch.py} script ensures that the Randoop jar file is available,
 and the \cmd{run.py} script ensures that input files for Randoop (such as
 the list of classes in the Pascali corpus) are there.
 
-From the root directory of the Pascali project, run the
+From the \texttt{integration\_test2} directory, run the
 following commands to make links to files needed for the tutorial:
 \begin{verbatim}
 PASCALIROOT = `pwd`
@@ -58,7 +59,7 @@ cd tutorial-examples
 \section{Learning about Randoop}\label{thebasics}
 We will apply Randoop to a toy class, \texttt{MyInteger}.
 
-\subsection{A buggy class}
+\subsection{Discovering a bug}
 First, run the command
 \begin{verbatim}
   ./gradlew first build
@@ -70,11 +71,10 @@ Programmer-crafted tests are in \texttt{src/test/java/math/MyIntegerTest.java}.
 With a quick glance these look reasonable, but, as we'll see, this version of \code{MyInteger} has a bug.
 
 When we ran the \cmd{build} Gradle task these files were compiled, and the tests were run.
-But, to be sure, run the tests independently of the build:
+You can verify that the tests pass:
 \begin{verbatim}
   ./gradlew cleanTest test
 \end{verbatim}
-And, indeed, everything passes.
 
 Now let's use Randoop to generate some tests.
 Copy and paste the following command into your terminal to run Randoop:
@@ -82,13 +82,18 @@ Copy and paste the following command into your terminal to run Randoop:
  java -ea -cp build/classes/main:randoop.jar randoop.main.Main gentests \
    --testclass=math.MyInteger --junit-output-dir=src/test/java --outputlimit=20
 \end{verbatim}
-This will generate a small number of tests using the constructors and methods of the \texttt{math.MyInteger} class; writing them to the subdirectory \texttt{src/test/java}.
-Randoop has actually generated two pairs of files: one for error-revealing tests, and one for regression tests.
-For each pair, the file with the version number, such as \texttt{ErrorTest0.java}, is the JUnit class, and the file without (e.g., \texttt{ErrorTest.java}) is the JUnit4 test suite consisting of \code{ErrorTest0}.
+This generates a small number of tests that call the constructors and
+methods of the \texttt{MyInteger} class; it writes the tests to the subdirectory \texttt{src/test/java}.
+Randoop has actually generated two test suites: one for error-revealing tests, and one for regression tests.
+Each suite consists of a JUnit4 suite file (e.g., \texttt{ErrorTest.java})
+and files containing the tests themselves (e.g., \texttt{ErrorTest0.java}).
 
-The fact that Randoop generated the error-revealing tests means that it discovered code sequences that demonstrate the failure of a contract.
-Looking in the file \texttt{src/test/java/ErrorTest0.java}, there are five methods each which violate the same constract.
-The second, slightly edited, is
+The fact that Randoop generated the error-revealing tests means that it
+discovered a faulty behavior.
+The file \texttt{src/test/java/ErrorTest0.java} contins five methods, each
+of which violates the same constract:
+if two objects are equal, then they have the same \code{hashCode}
+For example, the second test method, slightly edited, is
 \begin{verbatim}
 public void test2() throws Throwable {
     math.MyInteger myInteger1 = new math.MyInteger((-1));
@@ -104,23 +109,21 @@ public void test2() throws Throwable {
         ? myInteger3.hashCode() == myInteger5.hashCode() : true);
 }
 \end{verbatim}
-This test checks the contract that encodes the convention that if two objects are equal, then they have the same \code{hashCode}.
 This is the kind of test that is likely to be overlooked by a programmer, but is critical to the proper behavior of the class in the tests that the programmer wrote.
 
-\vfill\pagebreak
-Running 
+To run the Randoop-generated tests, do:
 \begin{verbatim}
   ./gradlew test
 \end{verbatim}
-now includes the Randoop generated tests, with the tests in \texttt{ErrorTest0.java} failing, and the tests in \texttt{RegressionTests0.java} passing.
+You will see that the \texttt{ErrorTests} test suite fails, and the
+\texttt{RegressionTests} test suite passes.
 
+The regression tests capture sequences of code that do not violate a contract, along with assertions about the values that are generated. 
+We'll look more closely at regression tests after we have fixed the defect.
 
-The regression tests capture sequences of code that behaves well, along with assertions about the values that are generated. 
-We'll look more closely at regression tests once we have eliminated the errors.
+\subsection{Fixing the bug}
 
-\subsection{Revised class}
-
-If we look at the class (\texttt{src/main/java/math/MyInteger.java}) more closely than before, we can see that the equals method is poorly defined
+If we look at the class (\texttt{src/main/java/math/MyInteger.java}) more closely than before, we can see that the equals method is incorrectly defined
 \begin{verbatim}
 public boolean equals(Object other) {
     if (other instanceof MyInteger) {
@@ -131,19 +134,19 @@ public boolean equals(Object other) {
 \end{verbatim}
 and there is no \code{hashCode()} method.
 
-So, switch to a revised version of the class that fixes these problems.
-Run the command
+Let's assume that Randoop's tests revealed the problem to a developer, and
+the developer has made a fix.  To obtain the fixed version of the class, run
 \begin{verbatim}
   ./gradlew second
 \end{verbatim}
-to replace the buggy version of the class with the fixed one, and then the command
+Then, compile the class and run the tests:
 \begin{verbatim}
   ./gradlew build
 \end{verbatim}
-to compile the class and run the tests. 
 Notice that all of the tests now pass, even the error-revealing tests that had failed before.
+This verifies the fix
 
-\subsection{A regression}
+\subsection{Discovering a regression error}
 
 As we just saw, the tests generated for a previous version of the code are useful for checking the behavior of newer versions of the code.
 Let's create new regression tests for the \code{MyInteger} class.
