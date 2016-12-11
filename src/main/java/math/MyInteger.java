@@ -39,13 +39,18 @@ public class MyInteger {
   }
 
   public MyInteger multiply(MyInteger other) {
-    int a = Math.abs(this.value);
-    int b = Math.abs(other.value);
-    int product = a * b;
-    if (this.value < 0 || other.value < 0) {
-      return new MyInteger(-1 * product);
+    // Always multiply positive numbers, negate later.
+    boolean negative = false;
+    negative = negative || this.value < 0;
+    int absThis = Math.abs(this.value);
+    negative = negative || other.value < 0;
+    int absOther = Math.abs(other.value);
+    int absProduct = absThis * absOther;
+    if (negative) {
+      return new MyInteger(-1 * absProduct);
+    } else {
+      return new MyInteger(absProduct);
     }
-    return new MyInteger(product);
   }
 
   public int getIntValue() {

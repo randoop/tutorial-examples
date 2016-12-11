@@ -90,8 +90,8 @@ and files containing the tests themselves (e.g., \texttt{ErrorTest0.java}).
 
 The fact that Randoop generated the error-revealing tests means that it
 discovered a faulty behavior.
-The file \texttt{src/test/java/ErrorTest0.java} contins five methods, each
-of which violates the same constract:
+The file \texttt{src/test/java/ErrorTest0.java} contains five methods, each
+of which violates the same contract:
 if two objects are equal, then they have the same \code{hashCode}
 For example, the second test method, slightly edited, is
 \begin{verbatim}
@@ -160,14 +160,22 @@ to remove the existing set of tests, and then run Randoop again
    --testclass=math.MyInteger --junit-output-dir=src/test/java --outputlimit=200
 \end{verbatim}
 Notice that Randoop only generated new regression tests.
-Also, we used a much larger value for \cmd{--outputlimit}, which determines the limit on the number of tests that will generated (the number of generated tests may be much smaller.)
+That is because Randoop did not discover any problems in the new version of
+the code.
+Note that the command uses a larger value for \cmd{--outputlimit}, which is
+an upper bound on the number of tests that will generated.
 
-The value of regression tests is that they help identify situations where the behavior has changed from before. 
-Now, switch to a changed version with the command
+The value of regression tests is that they reveal changes in behavior.
+Suppose that a programmer makes some modifications to improve performance
+or add new features, but the programmer intends that existing functionality
+should not be affected.
+To validate these changes, you can run the regression tests.
+
+Obtain a changed version of the code with the command
 \begin{verbatim}
   ./gradlew third 
 \end{verbatim}
-and watch closely what happens when the tests are run
+and run the tests:
 \begin{verbatim}
   ./gradlew test 
 \end{verbatim}
@@ -198,18 +206,24 @@ public void test02() throws Throwable {
 
 }
 \end{verbatim}
-This assertion says that integer value of the product of -1 with itself  should be 1.
-But, since the assertion fails, there is either something wrong with \code{MyInteger.getIntValue()} or with \code{MyInteger.multiply()}.
+This assertion says that $-1 \times -1 = 1$.
+Since the assertion fails, either the test is wrong, or there is something
+wrong with one of the methods that the test calls.
 If we look in the new \code{MyInteger}, the problem is that we've changed \code{multiply} to avoid the product of arbitrary negative numbers, and messed up the logic of correcting the sign:
 \begin{verbatim}
-public MyInteger multiply(MyInteger other) {
-    int a = Math.abs(this.value);
-    int b = Math.abs(other.value);
-    int product = a * b;
-    if (this.value < 0 || other.value < 0) {
-      return new MyInteger(-1 * product);
+  public MyInteger multiply(MyInteger other) {
+    // Always multiply positive numbers, negate later.
+    boolean negative = false;
+    negative = negative || this.value < 0;
+    int absThis = Math.abs(this.value);
+    negative = negative || other.value < 0;
+    int absOther = Math.abs(other.value);
+    int absProduct = absThis * absOther;
+    if (negative) {
+      return new MyInteger(-1 * absProduct);
+    } else {
+      return new MyInteger(absProduct);
     }
-    return new MyInteger(product);
   }
 \end{verbatim}
 
@@ -217,11 +231,17 @@ public MyInteger multiply(MyInteger other) {
 What we've seen so far is that Randoop can generate tests that find important bugs, and also can help find regressions that arise between versions of code. 
 But, Randoop can do more than build tests for a single simple class, it can build complex tests for non-toy code bases such as those included in the Pascali corpus.
 
-The example we use from the Pascali corpus is part of the Catalano Framework (\url{https://github.com/DiegoCatalano/Catalano-Framework}).
-Running the following Gradle task runs Randoop on the files in \texttt{catalanoimage/classlist.txt} using the classpath in \texttt{catalanoimage/classpath.txt}.
-(Several of the methods throw exceptions, so we redirect standard error to a log file.)
+As an example, consider part of the Catalano Framework
+(\url{https://github.com/DiegoCatalano/Catalano-Framework}) from the
+Pascali corpus.
+The following Gradle task runs Randoop on the files in \texttt{catalanoimage/classlist.txt},
+using the classpath in \texttt{catalanoimage/classpath.txt}
+and redirecting standard error to a log file.
 \begin{verbatim}
   ./gradlew runCatalanoExample 2> catalano-error-log.txt
 \end{verbatim}
-This run uses \cmd{--outputlimit=2000}, and generates 1062 regression tests, and 9 error-revealing tests.
+Randoop generates 9 error-revealing tests and 1062 regression tests.
 \end{document}  
+
+%%  LocalWords:  Pascali test2 py MyInteger src JUnit4 ErrorTest Catalano
+%%  LocalWords:  ErrorTest0 outputlimit AssertionError catalanoimage
